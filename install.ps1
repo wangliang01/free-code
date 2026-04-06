@@ -107,6 +107,13 @@ function Install-Bun {
     $env:BUN_INSTALL = $bunDir
     $env:PATH = "$bunDir\bin;$env:PATH"
     
+    # Find bun executable - it might be in a subdirectory
+    $bunExe = Get-ChildItem -Path $bunDir -Recurse -Filter "bun.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($bunExe) {
+        # Add the directory containing bun.exe to PATH
+        $env:PATH = "$($bunExe.DirectoryName);$env:PATH"
+    }
+    
     # Refresh command
     $bun = Get-Command bun -ErrorAction SilentlyContinue
     if (-not $bun) {
@@ -178,8 +185,9 @@ function Link-Binary {
     if (-not $pathAdded) {
         Write-Warn "$linkDir is not on your PATH"
         Write-Host ""
-        Write-Host "  Add this to your PowerShell profile (`$PROFILE):" -ForegroundColor Yellow
-        Write-Host "    `$env:PATH += `";$linkDir`"" -ForegroundColor Yellow
+        Write-Host "  Add this to your system PATH:" -ForegroundColor Yellow
+        Write-Host "    Control Panel -> System -> Advanced -> Environment Variables" -ForegroundColor DarkYellow
+        Write-Host "    Add: $linkDir" -ForegroundColor Yellow
         Write-Host ""
     }
 }
