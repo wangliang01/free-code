@@ -1,5 +1,5 @@
 # free-code installer for Windows
-# Usage: iwr -useb https://raw.githubusercontent.com/win4r/free-code/main/install.ps1 | iex
+# Usage: iwr -useb https://raw.githubusercontent.com/wangliang01/free-code/main/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
