@@ -70,18 +70,38 @@ function Check-Bun {
 }
 
 function Install-Bun {
+    $bun = Get-Command bun -ErrorAction SilentlyContinue
+    if ($bun) {
+        $ver = bun --version
+        if (Version-Gte $ver $BUN_MIN_VERSION) {
+            Write-Ok "bun: v$ver"
+            return
+        }
+        Write-Warn "bun v$ver found but v$BUN_MIN_VERSION+ required. Upgrading..."
+    } else {
+        Write-Info "bun not found. Installing..."
+    }
+    
+    # Download and install bun manually (avoid bash script issues)
     $tempDir = [System.IO.Path]::GetTempPath()
-    $bunInstallScript = Join-Path $tempDir "install_bun.ps1"
+    $bunZip = Join-Path $tempDir "bun-windows-x64.zip"
     
-    Invoke-WebRequest -Uri "https://bun.sh/install" -OutFile $bunInstallScript -UseBasicParsing
-    powershell -ExecutionPolicy Bypass -File $bunInstallScript
+    # Detect architecture
+    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "AMD64") { "x64" } else { "aarch64" }
     
-    $env:BUN_INSTALL = "$env:USERPROFILE\.bun"
-    $env:PATH = "$env:BUN_INSTALL\bin;$env:PATH"
+    Invoke-WebRequest -Uri "https://github.com/oven-sh/bun/releases/download/bun-v$BUN_MIN_VERSION/bun-windows-x64.zip" -OutFile $bunZip -UseBasicParsing
+    
+    # Extract
+    $bunDir = "$env:USERPROFILE\.bun"
+    if (Test-Path $bunDir) { Remove-Item $bunDir -Recurse -Force }
+    Expand-Archive -Path $bunZip -DestinationPath $bunDir -Force
+    
+    $env:BUN_INSTALL = $bunDir
+    $env:PATH = "$bunDir\bin;$env:PATH"
     
     $bun = Get-Command bun -ErrorAction SilentlyContinue
     if (-not $bun) {
-        Write-Fail "bun installation succeeded but binary not found on PATH. Add `$env:USERPROFILE\.bin to your PATH."
+        Write-Fail "bun installation failed. Add $bunDir\bin to your PATH."
     }
     Write-Ok "bun: v$(bun --version) (just installed)"
 }
@@ -113,6 +133,14 @@ function Install-Deps {
 function Build-Binary {
     Write-Info "Building free-code (all experimental features enabled)..."
     Set-Location $INSTALL_DIR
+    
+    # Ensure output directory exists
+    $outDir = if ($IsWindows) { ".\cli-dev" } else { "./cli-dev" }
+    $outDir = Split-Path $outDir
+    if ($outDir -and -not (Test-Path $outDir)) {
+        New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+    }
+    
     bun run build:dev:full
     $binaryPath = Join-Path $INSTALL_DIR "cli-dev"
     if (Test-Path $binaryPath) {
