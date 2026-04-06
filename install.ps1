@@ -78,6 +78,12 @@ function Install-Bun {
             return
         }
         Write-Warn "bun v$ver found but v$BUN_MIN_VERSION+ required. Upgrading..."
+        
+        # Remove old bun first
+        $oldBunDir = "$env:USERPROFILE\.bun"
+        if (Test-Path $oldBunDir) {
+            Remove-Item $oldBunDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
     } else {
         Write-Info "bun not found. Installing..."
     }
@@ -89,16 +95,19 @@ function Install-Bun {
     # Detect architecture
     $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "AMD64") { "x64" } else { "aarch64" }
     
+    Write-Info "Downloading bun v$BUN_MIN_VERSION..."
     Invoke-WebRequest -Uri "https://github.com/oven-sh/bun/releases/download/bun-v$BUN_MIN_VERSION/bun-windows-x64.zip" -OutFile $bunZip -UseBasicParsing
     
     # Extract
     $bunDir = "$env:USERPROFILE\.bun"
     if (Test-Path $bunDir) { Remove-Item $bunDir -Recurse -Force }
+    Write-Info "Extracting bun..."
     Expand-Archive -Path $bunZip -DestinationPath $bunDir -Force
     
     $env:BUN_INSTALL = $bunDir
     $env:PATH = "$bunDir\bin;$env:PATH"
     
+    # Refresh command
     $bun = Get-Command bun -ErrorAction SilentlyContinue
     if (-not $bun) {
         Write-Fail "bun installation failed. Add $bunDir\bin to your PATH."
@@ -112,7 +121,7 @@ function Clone-Repo {
         if (Test-Path "$INSTALL_DIR\.git") {
             Write-Info "Pulling latest changes..."
             Set-Location $INSTALL_DIR
-            git pull --ff-only origin main 2>$null
+            git pull --ff-only origin main *> $null
             if ($LASTEXITCODE -ne 0) { Write-Warn "Pull failed, continuing with existing copy" }
         }
     } else {
@@ -125,7 +134,7 @@ function Clone-Repo {
 function Install-Deps {
     Write-Info "Installing dependencies..."
     Set-Location $INSTALL_DIR
-    bun install --frozen-lockfile 2>$null
+    bun install --frozen-lockfile *> $null
     if ($LASTEXITCODE -ne 0) { bun install }
     Write-Ok "Dependencies installed"
 }
