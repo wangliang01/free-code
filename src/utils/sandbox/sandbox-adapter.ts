@@ -571,7 +571,7 @@ function getSandboxUnavailableReason(): string | undefined {
     if (platform === 'wsl') {
       return 'sandbox.enabled is set but WSL1 is not supported (requires WSL2)'
     }
-    return `sandbox.enabled is set but ${platform} is not supported (requires macOS, Linux, or WSL2)`
+    return `sandbox.enabled is set but ${platform} is not supported (requires macOS, Linux, Windows, or WSL2)`
   }
 
   if (!isPlatformInEnabledList()) {

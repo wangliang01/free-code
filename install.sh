@@ -12,7 +12,7 @@ BOLD='\033[1m'
 DIM='\033[2m'
 RESET='\033[0m'
 
-REPO="https://github.com/win4r/free-code.git"
+REPO="https://github.com/wangliang01/free-code.git"
 INSTALL_DIR="$HOME/free-code"
 BUN_MIN_VERSION="1.3.11"
 
