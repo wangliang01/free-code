@@ -92,7 +92,8 @@ function Clone-Repo {
         if (Test-Path "$INSTALL_DIR\.git") {
             Write-Info "Pulling latest changes..."
             Set-Location $INSTALL_DIR
-            git pull --ff-only origin main 2>$null || Write-Warn "Pull failed, continuing with existing copy"
+            git pull --ff-only origin main 2>$null
+            if ($LASTEXITCODE -ne 0) { Write-Warn "Pull failed, continuing with existing copy" }
         }
     } else {
         Write-Info "Cloning repository..."
@@ -104,7 +105,8 @@ function Clone-Repo {
 function Install-Deps {
     Write-Info "Installing dependencies..."
     Set-Location $INSTALL_DIR
-    bun install --frozen-lockfile 2>$null || bun install
+    bun install --frozen-lockfile 2>$null
+    if ($LASTEXITCODE -ne 0) { bun install }
     Write-Ok "Dependencies installed"
 }
 
